@@ -1,17 +1,63 @@
 <script setup lang="ts">
+import io from "socket.io-client";
+import useMainStore from "@/store";
+import { toRefs } from "@vue/reactivity";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
+
+const mainStore = useMainStore();
+
+const router = useRouter();
+
+const { socketObj, userId } = toRefs(mainStore);
+
+// 未登录
+if (!userId) {
+  router.replace("/login");
+}
+
+const handleMsg = (data) => {
+  console.log("-----------handleMsg", data);
+};
+
+const initSocket = () => {
+  const socket = io("http://127.0.0.1:7001");
+  socket.on("connect", () => {
+    console.log("connect");
+    // userSocketId = socket.id;
+    socket.on("msg", handleMsg);
+    socket.emit("join");
+    socketObj.value = socket;
+  });
+
+  // 接收在线用户信息
+  socket.on("online", (msg) => {
+    console.log("#online,", msg);
+  });
+
+  // 系统事件
+  socket.on("disconnect", (msg) => {
+    console.log("#disconnect", msg);
+  });
+
+  socket.on("disconnecting", () => {
+    console.log("#disconnecting");
+  });
+
+  socket.on("error", () => {
+    console.log("#error");
+  });
+};
+
+initSocket();
+
+// socketRef.value.emit("message", {
+//   userId: userSocketId,
+//   msg: "213",
+// });
 </script>
 
 <template>
-  <!-- <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" /> -->
-
   <router-view />
 </template>
 
